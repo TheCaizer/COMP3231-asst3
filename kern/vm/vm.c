@@ -7,7 +7,8 @@
 #include <machine/tlb.h>
 
 /* Place your page table functions here */
-
+// Need to add functions to insert (Izaac), lookup (Jackie) and update (Izaac) page table entries 
+// Need to do vm_fault (Izaac)
 
 void vm_bootstrap(void)
 {

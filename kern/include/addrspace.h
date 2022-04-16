@@ -40,6 +40,19 @@
 
 struct vnode;
 
+/*
+*   The region for the VM address spaces where
+*   base: is the start of the region
+*   size: is the size of the region
+*   permission: is permission access the regions can do
+*   next: is a pointer to the next region
+*/
+struct region{
+    vaddr_t base;
+    int permission;
+    size_t size;
+    struct region *next;
+};
 
 /*
  * Address space - data structure associated with the virtual memory
@@ -47,7 +60,6 @@ struct vnode;
  *
  * You write this.
  */
-
 struct addrspace {
 #if OPT_DUMBVM
         vaddr_t as_vbase1;
@@ -59,6 +71,9 @@ struct addrspace {
         paddr_t as_stackpbase;
 #else
         /* Put stuff here for your VM system */
+        paddr_t **pagetable;
+        vaddr_t stack;
+        struct region *region_head;
 #endif
 };
 
@@ -103,20 +118,20 @@ struct addrspace {
  * functions are found in dumbvm.c.
  */
 
-struct addrspace *as_create(void);
-int               as_copy(struct addrspace *src, struct addrspace **ret);
-void              as_activate(void);
-void              as_deactivate(void);
-void              as_destroy(struct addrspace *);
+struct addrspace *as_create(void); // Jackie
+int               as_copy(struct addrspace *src, struct addrspace **ret); // Izaac
+void              as_activate(void); //Together 
+void              as_deactivate(void); //Together
+void              as_destroy(struct addrspace *);// Izaac
 
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
                                    int readable,
                                    int writeable,
-                                   int executable);
-int               as_prepare_load(struct addrspace *as);
-int               as_complete_load(struct addrspace *as);
-int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr);
+                                   int executable); // Jackie
+int               as_prepare_load(struct addrspace *as); // Jackie
+int               as_complete_load(struct addrspace *as); // Izaac
+int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr); // Jackie
 
 
 /*
