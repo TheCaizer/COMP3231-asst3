@@ -75,14 +75,43 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		return ENOMEM;
 	}
 
-	/*
-	 * Write this.
-	 */
+	//copy pagetable
+	newas->pagetable = kmalloc(2048*sizeof(*paddr_t));
+	for(i=0; i < 2048; i++){
+		if old->pagetable[i] != 0:
+			newas->pagetable[i] =  kmalloc(512*sizeof(paddr_t));
+			for(j = 0; j < 512; j++){
+				newas->pagetable[i][j] = old->pagetable[i][j]
+			}
+	}
 
-	(void)old;
+	if(old->region_head == NULL){
+		newas->region_head = NULL;
+	}else{
+		//copy region linked list
+		newas->region_head = kmalloc(sizeof(region));
+		newas->region_head->base= old->region_head->base
+		newas->region_head->permission = old->region_head->permission
+		newas->region_head->size = old->region_head->size
+		curOldNode = old->region_head->next
+		curNode = newas->region_head
+		while(curOldNode!= NULL){
+			curNode->next = kmalloc(sizeof(region));
+			curNode->next->base= curOldNode->base
+			curNode->next->permission = curOldNode->permission
+			curNode->next->size = curOldNode->size
+
+			curNode = curNode->next
+			curOldNode = curOldNode->next
+
+		}
+
+		curNode->next = NULL
+	}
+	//(void)old;
 
 	*ret = newas;
-	return 0;
+	return 0\ret;
 }
 
 void
