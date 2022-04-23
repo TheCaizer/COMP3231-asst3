@@ -37,6 +37,7 @@
 #define READ 0x4
 #define WRITE 0x2
 #define EXECUTE 0x1
+#define PAGE_SIZE 4096
 /*
  * Address space structure and operations.
  */
@@ -57,7 +58,6 @@ struct vnode;
 */
 struct region{
     vaddr_t base;
-    //for permission index 0 = r, 1=w, 2= x; 
     int permission;
     size_t size;
     struct region *next;
@@ -137,8 +137,8 @@ int               as_define_region(struct addrspace *as,
                                    int readable,
                                    int writeable,
                                    int executable); // Jackie (DONE)
-int               as_prepare_load(struct addrspace *as); // Jackie
-int               as_complete_load(struct addrspace *as); // Jackie
+int               as_prepare_load(struct addrspace *as); // Jackie (DONE)
+int               as_complete_load(struct addrspace *as); // Jackie (DONE)
 int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr); // Jackie (DONE)
 
 

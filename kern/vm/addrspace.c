@@ -63,7 +63,7 @@ as_create(void)
 	*/
     // set head as null and malloc the page table
     as->head = NULL;
-    as->pagetable = kmalloc(sizeof(paddr_t **) * PT_FIRST_SIZE);
+    as->pagetable = kmalloc(sizeof(paddr_t *) * PT_FIRST_SIZE);
     // Did not set pagetable therefore no mem or error so free and return
     if(as->pagetable == NULL){
         kfree(as->pagetable);
@@ -223,9 +223,16 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
     // Set base, size, the persmissions
     new->base = vaddr;
     new->size = memsize;
-    new->permission[0] = readable;
-    new->permission[1] = writeable;
-    new->permission[2] = executable;
+    new->permission = 0;
+    if(readable){
+        new->permission = new->permission | READ;
+    }
+    if(writeable){
+        new->permission = new->permission | WRITE;
+    }
+    if(executable){
+        new->permission = new->permissionF | EXECUTE;
+    }
     new->next = as->region_head;
     as->region_head = new;
     return 0;
@@ -244,10 +251,13 @@ as_prepare_load(struct addrspace *as)
     struct region *curNode = as->region_head;
 
     while(curNode != NULL){
-        // Check curNode is readable
-        if(curNode->permission[0]){
-            // set curNode as writable
-            curNode->permission[1] = 1;
+        // Check curNode is READ_ONLY or ReadExecute, not sure if we need to also
+        // include execute only
+        if(curNode->permission == READ || curNode->permission == (READ & EXECUTE)){
+            // set to writable
+            curNode->permission = curNode->permission | WRITE;
+            // set the 4th bith to 1 so that we know this a one that was changed 
+            curNode->permission = curNode->permission | 0x8;
         }
         curNode = curNode->next;
     }
@@ -261,9 +271,21 @@ as_complete_load(struct addrspace *as)
 	if(as == NULL){
         return EFAULT;
     } 
-
-    
-
+    struct region *curNode = as->region_head ;
+    while(curNode != NULL){
+        // check if the 4th bit is set
+        if(curNode->permission & 0x8){
+            // remove the write and 4th bit so its the old permission
+            // shift 1 to the second bit flip the bits and do an and function
+            curNode->permission &= ~(1 << 1);
+            // shift 1 to the fouth bit flip the bits and do an and function
+            curNode->permission &= ~(1 << 3);
+            // this should result into the origninal read or execute bits
+            // by setting write to 0 and 4th bit to 0
+        }
+        curNode = curNode->next;
+    }
+    // flush tlb
 	spl = splhigh();
 
 	for (i=0; i<NUM_TLB; i++) {
@@ -271,6 +293,7 @@ as_complete_load(struct addrspace *as)
 	}
 
 	splx(spl);
+    return;
 }
 
 int
@@ -279,7 +302,7 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	/*
 	 * Write this.
 	 */
-    int size = STACK_SIZE * PAGE_SIZEl
+    size_t size = STACK_SIZE * PAGE_SIZE;
     vaddr_t stack = USERSTACK - size;
     int ret = as_define_region(as, stack, size, 1, 1, 0);
     if(ret){
