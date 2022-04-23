@@ -180,6 +180,7 @@ as_deactivate(void)
 	 * anything. See proc.c for an explanation of why it (might)
 	 * be needed.
 	 */
+     // same as as_activate
 	spl = splhigh();
 
 	for (i=0; i<NUM_TLB; i++) {
@@ -206,10 +207,22 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	/*
 	 * Write this.
 	 */
+     // Check not NULL
     if(as == NULL){
         return EFAULT;
     }
-
+    // Check it is valid region
+    if(vaddr + memsize > 0x80000000){
+        return EFAULT;
+    }
+    // make new region
+    struct region *new = kmalloc(sizeof(struct region));
+    if(new == NULL){
+        return ENOMEM;
+    }
+    new->base = vaddr;
+    new->size = memsize;
+    
 }
 
 int
@@ -240,12 +253,14 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	/*
 	 * Write this.
 	 */
-
-	(void)as;
-
-	/* Initial user-level stack pointer */
+    int size = STACK_SIZE * PAGE_SIZEl
+    vaddr_t stack = USERSTACK - size;
+    int ret = as_define_region(as, stack, size, 1, 1, 0);
+    if(ret){
+        return ret;
+    }
+    /* Initial user-level stack pointer */
 	*stackptr = USERSTACK;
-
 	return 0;
 }
 

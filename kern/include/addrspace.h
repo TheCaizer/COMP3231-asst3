@@ -33,6 +33,7 @@
 // First level 2^11 entries and 2^9 for second level
 #define PT_FIRST_SIZE 2048
 #define PT_SECOND_SIZE 512
+#define STACK_SIZE 16
 
 /*
  * Address space structure and operations.
@@ -121,11 +122,11 @@ struct addrspace {
  * functions are found in dumbvm.c.
  */
 
-struct addrspace *as_create(void); // Jackie
-int               as_copy(struct addrspace *src, struct addrspace **ret); // Izaac
-void              as_activate(void); //Together 
-void              as_deactivate(void); //Together
-void              as_destroy(struct addrspace *);// Izaac
+struct addrspace *as_create(void); // Jackie (DONE)
+int               as_copy(struct addrspace *src, struct addrspace **ret); // Izaac (DONE)
+void              as_activate(void); //Together (DONE)
+void              as_deactivate(void); //Together (DONE)
+void              as_destroy(struct addrspace *);// Izaac (DONE)
 
 int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
