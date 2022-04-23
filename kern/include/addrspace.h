@@ -30,6 +30,10 @@
 #ifndef _ADDRSPACE_H_
 #define _ADDRSPACE_H_
 
+// First level 2^11 entries and 2^9 for second level
+#define PT_FIRST_SIZE 2048
+#define PT_SECOND_SIZE 512
+
 /*
  * Address space structure and operations.
  */

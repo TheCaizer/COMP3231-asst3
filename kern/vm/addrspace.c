@@ -60,8 +60,21 @@ as_create(void)
 
 	/*
 	 * Initialize as needed.
-	 */
-
+	*/
+    // set head as null and malloc the page table
+    as->head = NULL;
+    as->pagetable = kmalloc(sizeof(paddr_t **) * PT_FIRST_SIZE);
+    // Did not set pagetable therefore no mem or error so free and return
+    if(as->pagetable == NULL){
+        kfree(as->pagetable);
+        kfree(as);
+        return NULL;
+    }
+    // Initialize first level
+    for(int i = 0; i < PT_FIRST_SIZE; i++){
+        as->pagetable[i] = NULL;
+    }
+     
 	return as;
 }
 
