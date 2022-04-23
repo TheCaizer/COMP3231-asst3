@@ -88,22 +88,64 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		return ENOMEM;
 	}
 
-	/*
-	 * Write this.
-	 */
+	//copy pagetable
+	newas->pagetable = kmalloc(2048*sizeof(*paddr_t));
+	for(i=0; i < 2048; i++){
+		if old->pagetable[i] != 0:
+			newas->pagetable[i] =  kmalloc(512*sizeof(paddr_t));
+			for(j = 0; j < 512; j++){
+				newas->pagetable[i][j] = old->pagetable[i][j]
+			}
+	}
 
-	(void)old;
+	if(old->region_head == NULL){
+		newas->region_head = NULL;
+	}else{
+		//copy region linked list
+		newas->region_head = kmalloc(sizeof(region));
+		newas->region_head->base= old->region_head->base
+		newas->region_head->permission = old->region_head->permission
+		newas->region_head->size = old->region_head->size
+		region *curOldNode = old->region_head->next
+		region *curNode = newas->region_head
+		while(curOldNode!= NULL){
+			curNode->next = kmalloc(sizeof(region));
+			curNode->next->base= curOldNode->base
+			curNode->next->permission = curOldNode->permission
+			curNode->next->size = curOldNode->size
 
-	*ret = newas;
-	return 0;
+			curNode = curNode->next
+			curOldNode = curOldNode->next
+
+		}
+
+		curNode->next = NULL
+	}
+	//(void)old;
+
+	addrspace **ret = &newas;
+	return ret;
 }
 
 void
 as_destroy(struct addrspace *as)
 {
-	/*
-	 * Clean up as needed.
-	 */
+	region *curNode = as->region_head
+	region *temp = NULL
+	while(curNode != NULL){
+		temp = curNode->next 
+		kfree(curNode)
+		curNode = temp
+	}
+	for(i = 0; i < 2048){
+		if (as->pagetable[i] != 0){
+			for(j = 0; j < 512; j++){
+				kfree(as->pagetable[i][j])
+			}
+			kfree(as->pagetable[i])
+		}
+		
+	}
 
 	kfree(as);
 }
