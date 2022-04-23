@@ -34,7 +34,9 @@
 #define PT_FIRST_SIZE 2048
 #define PT_SECOND_SIZE 512
 #define STACK_SIZE 16
-
+#define READ 0x4
+#define WRITE 0x2
+#define EXECUTE 0x1
 /*
  * Address space structure and operations.
  */
@@ -56,7 +58,7 @@ struct vnode;
 struct region{
     vaddr_t base;
     //for permission index 0 = r, 1=w, 2= x; 
-    int permission[3];
+    int permission;
     size_t size;
     struct region *next;
 };

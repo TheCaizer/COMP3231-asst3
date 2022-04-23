@@ -237,20 +237,40 @@ as_prepare_load(struct addrspace *as)
 	/*
 	 * Write this.
 	 */
+     // Check for err
+    if(as == NULL){
+        return EFAULT;
+    }
+    struct region *curNode = as->region_head;
 
-	(void)as;
-	return 0;
+    while(curNode != NULL){
+        // Check curNode is readable
+        if(curNode->permission[0]){
+            // set curNode as writable
+            curNode->permission[1] = 1;
+        }
+        curNode = curNode->next;
+    }
+    return 0;
 }
 
 int
 as_complete_load(struct addrspace *as)
 {
-	/*
-	 * Write this.
-	 */
+    //check for err
+	if(as == NULL){
+        return EFAULT;
+    } 
 
-	(void)as;
-	return 0;
+    
+
+	spl = splhigh();
+
+	for (i=0; i<NUM_TLB; i++) {
+		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+	}
+
+	splx(spl);
 }
 
 int
