@@ -33,7 +33,7 @@
 // First level 2^11 entries and 2^9 for second level
 #define PT_FIRST_SIZE 2048
 #define PT_SECOND_SIZE 512
-#define STACK_SIZE 16
+#define NUM_STACK 16
 #define READ 0x4
 #define WRITE 0x2
 #define EXECUTE 0x1
@@ -45,7 +45,6 @@
 
 #include <vm.h>
 #include "opt-dumbvm.h"
-#include<stdbool.h>
 
 struct vnode;
 

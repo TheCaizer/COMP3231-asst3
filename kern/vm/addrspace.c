@@ -62,7 +62,7 @@ as_create(void)
 	 * Initialize as needed.
 	*/
     // set head as null and malloc the page table
-    as->head = NULL;
+    as->region_head = NULL;
     as->pagetable = kmalloc(sizeof(paddr_t *) * PT_FIRST_SIZE);
     // Did not set pagetable therefore no mem or error so free and return
     if(as->pagetable == NULL){
@@ -89,64 +89,67 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 	}
 
 	//copy pagetable
-	newas->pagetable = kmalloc(2048*sizeof(*paddr_t));
-	for(i=0; i < 2048; i++){
-		if old->pagetable[i] != 0:
+	newas->pagetable = kmalloc(2048*sizeof(paddr_t *));
+	for(int i=0; i < 2048; i++){
+		if (old->pagetable[i] != 0){
 			newas->pagetable[i] =  kmalloc(512*sizeof(paddr_t));
-			for(j = 0; j < 512; j++){
-				newas->pagetable[i][j] = old->pagetable[i][j]
+			for(int j = 0; j < 512; j++){
+				newas->pagetable[i][j] = old->pagetable[i][j];
 			}
+        }
 	}
 
 	if(old->region_head == NULL){
 		newas->region_head = NULL;
 	}else{
 		//copy region linked list
-		newas->region_head = kmalloc(sizeof(region));
-		newas->region_head->base= old->region_head->base
-		newas->region_head->permission = old->region_head->permission
-		newas->region_head->size = old->region_head->size
-		region *curOldNode = old->region_head->next
-		region *curNode = newas->region_head
+		newas->region_head = kmalloc(sizeof(struct region));
+		newas->region_head->base= old->region_head->base;
+		newas->region_head->permission = old->region_head->permission;
+		newas->region_head->size = old->region_head->size;
+		struct region *curOldNode = old->region_head->next;
+		struct region *curNode = newas->region_head;
 		while(curOldNode!= NULL){
-			curNode->next = kmalloc(sizeof(region));
-			curNode->next->base= curOldNode->base
-			curNode->next->permission = curOldNode->permission
-			curNode->next->size = curOldNode->size
+			curNode->next = kmalloc(sizeof(struct region));
+			curNode->next->base= curOldNode->base;
+			curNode->next->permission = curOldNode->permission;
+			curNode->next->size = curOldNode->size;
 
-			curNode = curNode->next
-			curOldNode = curOldNode->next
+			curNode = curNode->next;
+			curOldNode = curOldNode->next;
 
 		}
 
-		curNode->next = NULL
+		curNode->next = NULL;
 	}
 	//(void)old;
 
-	addrspace **ret = &newas;
-	return ret;
+	*ret = newas;
+	return 0;
 }
 
 void
 as_destroy(struct addrspace *as)
 {
-	region *curNode = as->region_head
-	region *temp = NULL
+	struct region *curNode = as->region_head;
+	struct region *temp = NULL;
 	while(curNode != NULL){
-		temp = curNode->next 
-		kfree(curNode)
-		curNode = temp
+		temp = curNode->next ;
+		kfree(curNode);
+		curNode = temp;
 	}
-	for(i = 0; i < PT_FIRST_SIZE){
+	for(int i = 0; i < PT_FIRST_SIZE; i++){
 		if (as->pagetable[i] != 0){
-			for(j = 0; j < PT_SECOND_SIZE2; j++){
-				kfree(as->pagetable[i][j])
+			for(int j = 0; j < PT_SECOND_SIZE; j++){
+				if(as->pagetable[i][j] != 0){
+                    free_kpages(PADDR_TO_KVADDR(as->pagetable[i][j]));
+                }
 			}
-			kfree(as->pagetable[i])
+			kfree(as->pagetable[i]);
 		}
 		
 	}
-
+    kfree(as->pagetable);
 	kfree(as);
 }
 
@@ -181,9 +184,9 @@ as_deactivate(void)
 	 * be needed.
 	 */
      // same as as_activate
-	spl = splhigh();
+	int spl = splhigh();
 
-	for (i=0; i<NUM_TLB; i++) {
+	for (int i=0; i<NUM_TLB; i++) {
 		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
 	}
 
@@ -231,7 +234,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
         new->permission = new->permission | WRITE;
     }
     if(executable){
-        new->permission = new->permissionF | EXECUTE;
+        new->permission = new->permission | EXECUTE;
     }
     new->next = as->region_head;
     as->region_head = new;
@@ -286,14 +289,14 @@ as_complete_load(struct addrspace *as)
         curNode = curNode->next;
     }
     // flush tlb
-	spl = splhigh();
+	int spl = splhigh();
 
-	for (i=0; i<NUM_TLB; i++) {
+	for (int i=0; i<NUM_TLB; i++) {
 		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
 	}
 
 	splx(spl);
-    return;
+    return 0;
 }
 
 int
@@ -302,7 +305,7 @@ as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 	/*
 	 * Write this.
 	 */
-    size_t size = STACK_SIZE * PAGE_SIZE;
+    size_t size = NUM_STACK * PAGE_SIZE;
     vaddr_t stack = USERSTACK - size;
     int ret = as_define_region(as, stack, size, 1, 1, 0);
     if(ret){
