@@ -23,7 +23,7 @@ int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
 
-    if(faulttype = VM_FAULT_READONLY){
+    if(faulttype == VM_FAULT_READONLY){
         return EFAULT;
     }
     if (curproc == NULL) {

@@ -105,6 +105,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                 newas->pagetable[i][j] = 0;
             }
             else{
+                // Allocate physical frame
                 vaddr_t frame = alloc_kpages(1);
                 if(frame == 0){
                     as_destroy(newas);
@@ -112,6 +113,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                 }
                 paddr_t add_frame = KVADDR_TO_PADDR(frame);
                 newas->pagetable[i][j] = add_frame;
+                // copy mem
                 memcpy((void *) frame, (const void*)PADDR_TO_KVADDR(old->pagetable[i][j]), PAGE_SIZE);
             }
         }
@@ -165,18 +167,20 @@ as_destroy(struct addrspace *as)
 		kfree(curNode);
 		curNode = temp;
 	}
-	for(int i = 0; i < PT_FIRST_SIZE; i++){
-		if (as->pagetable[i] != 0){
-			for(int j = 0; j < PT_SECOND_SIZE; j++){
-				if(as->pagetable[i][j] != 0){
-                    free_kpages(PADDR_TO_KVADDR(as->pagetable[i][j]));
+    if(as->pagetable != NULL){
+        for(int i = 0; i < PT_FIRST_SIZE; i++){
+            if (as->pagetable[i] != NULL){
+                for(int j = 0; j < PT_SECOND_SIZE; j++){
+                    if(as->pagetable[i][j] != 0){
+                        free_kpages(PADDR_TO_KVADDR(as->pagetable[i][j]));
+                    }
                 }
-			}
-			kfree(as->pagetable[i]);
-		}
-		
-	}
-    kfree(as->pagetable);
+                kfree(as->pagetable[i]);
+            }
+            
+        }
+        kfree(as->pagetable);
+    }
 	kfree(as);
 }
 
