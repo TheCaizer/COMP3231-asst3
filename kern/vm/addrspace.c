@@ -222,7 +222,12 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
     }
     new->base = vaddr;
     new->size = memsize;
-    
+    new->permission[0] = readable;
+    new->permission[1] = writeable;
+    new->permission[2] = executable;
+    new->next = as->region_head;
+    as->region_head = new;
+    return 0;
 }
 
 int
