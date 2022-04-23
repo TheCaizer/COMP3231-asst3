@@ -42,6 +42,7 @@
 
 #include <vm.h>
 #include "opt-dumbvm.h"
+#include<stdbool.h>
 
 struct vnode;
 
@@ -54,7 +55,8 @@ struct vnode;
 */
 struct region{
     vaddr_t base;
-    int permission;
+    //for permission index 0 = r, 1=w, 2= x; 
+    bool permission[3];
     size_t size;
     struct region *next;
 };

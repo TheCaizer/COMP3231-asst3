@@ -22,8 +22,21 @@ void vm_bootstrap(void)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
-    (void) faulttype;
     (void) faultaddress;
+
+    if(faulttype = VM_FAULT_READONLY){
+        return EFAULT;
+    }else{
+        if(lookup(faultaddress) == -1){
+            addrspace *as = proc_getas()
+            region *curNode = as->region_head
+            while(curNode != NULL){
+                if(faultaddress >= curNode->base && 
+                    faultaddress >= (curNode->base+curNode->size)
+            }
+        }
+
+    }
 
     panic("vm_fault hasn't been written yet\n");
 
@@ -39,4 +52,9 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 {
 	(void)ts;
 	panic("vm tried to do tlb shootdown?!\n");
+}
+
+vm_ptable_insert(unsigned int npages){
+    vaddr = alloc_kpages(npages)
+
 }
