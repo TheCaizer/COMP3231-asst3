@@ -89,21 +89,44 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 	}
 
 	//copy pagetable
-	newas->pagetable = kmalloc(2048*sizeof(paddr_t *));
-	for(int i=0; i < 2048; i++){
-		if (old->pagetable[i] != 0){
-			newas->pagetable[i] =  kmalloc(512*sizeof(paddr_t));
-			for(int j = 0; j < 512; j++){
-				newas->pagetable[i][j] = old->pagetable[i][j];
-			}
+	newas->pagetable = kmalloc(PT_FIRST_SIZE*sizeof(paddr_t *));
+    if(newas->pagetable == NULL){
+        as_destroy(newas);
+        return ENOMEM;
+    }
+    for(int i = 0; i < PT_FIRST_SIZE; i++){
+        if(old->pagetable[i] == NULL){
+            newas->pagetable[i] = NULL;
+            continue;
         }
-	}
+        newas->pagetable[i] = kmalloc(sizeof(paddr_t *) * PT_SECOND_SIZE);
+        for(int j = 0;j < PT_SECOND_SIZE;j++){
+            if(old->pagetable[i][j] == 0){
+                newas->pagetable[i][j] = 0;
+            }
+            else{
+                vaddr_t frame = alloc_kpages(1);
+                if(frame == 0){
+                    as_destroy(newas);
+                    return ENOMEM;
+                }
+                paddr_t add_frame = KVADDR_TO_PADDR(frame);
+                newas->pagetable[i][j] = add_frame;
+                memcpy((void *) frame, (const void*)PADDR_TO_KVADDR(old->pagetable[i][j]), PAGE_SIZE);
+            }
+        }
+
+    }
 
 	if(old->region_head == NULL){
 		newas->region_head = NULL;
 	}else{
 		//copy region linked list
 		newas->region_head = kmalloc(sizeof(struct region));
+        if(newas->pagetable == NULL){
+            as_destroy(newas);
+            return ENOMEM;
+        }
 		newas->region_head->base= old->region_head->base;
 		newas->region_head->permission = old->region_head->permission;
 		newas->region_head->size = old->region_head->size;
@@ -111,6 +134,10 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		struct region *curNode = newas->region_head;
 		while(curOldNode!= NULL){
 			curNode->next = kmalloc(sizeof(struct region));
+            if(newas->pagetable == NULL){
+                as_destroy(newas);
+                return ENOMEM;
+            }
 			curNode->next->base= curOldNode->base;
 			curNode->next->permission = curOldNode->permission;
 			curNode->next->size = curOldNode->size;
