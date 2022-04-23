@@ -93,8 +93,8 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		newas->region_head->base= old->region_head->base
 		newas->region_head->permission = old->region_head->permission
 		newas->region_head->size = old->region_head->size
-		curOldNode = old->region_head->next
-		curNode = newas->region_head
+		region *curOldNode = old->region_head->next
+		region *curNode = newas->region_head
 		while(curOldNode!= NULL){
 			curNode->next = kmalloc(sizeof(region));
 			curNode->next->base= curOldNode->base
@@ -110,16 +110,29 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 	}
 	//(void)old;
 
-	*ret = newas;
-	return 0\ret;
+	addrspace **ret = &newas;
+	return ret;
 }
 
 void
 as_destroy(struct addrspace *as)
 {
-	/*
-	 * Clean up as needed.
-	 */
+	region *curNode = as->region_head
+	region *temp = NULL
+	while(curNode != NULL){
+		temp = curNode->next 
+		kfree(curNode)
+		curNode = temp
+	}
+	for(i = 0; i < 2048){
+		if (as->pagetable[i] != 0){
+			for(j = 0; j < 512; j++){
+				kfree(as->pagetable[i][j])
+			}
+			kfree(as->pagetable[i])
+		}
+		
+	}
 
 	kfree(as);
 }
