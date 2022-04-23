@@ -22,21 +22,53 @@ void vm_bootstrap(void)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
-    (void) faultaddress;
 
     if(faulttype = VM_FAULT_READONLY){
         return EFAULT;
-    }else{
-        if(lookup(faultaddress) == -1){
-            addrspace *as = proc_getas()
-            region *curNode = as->region_head
-            while(curNode != NULL){
-                if(faultaddress >= curNode->base && 
-                    faultaddress >= (curNode->base+curNode->size)
-            }
-        }
-
     }
+    if (curproc == NULL) {
+		/*
+		 * No process. This is probably a kernel fault early
+		 * in boot. Return EFAULT so as to panic instead of
+		 * getting into an infinite faulting loop.
+		 */
+		return EFAULT;
+	}
+
+	struct addrspace *as = proc_getas();
+	if (as == NULL) {
+		/*
+		 * No address space set up. This is probably also a
+		 * kernel fault early in boot.
+		 */
+		return EFAULT;
+	}
+    faultaddress &= PAGE_FRAME;
+
+    paddr = lookup(faultaddress)
+    if(paddr == 0){
+        addrspace *as = proc_getas()
+        region *curNode = as->region_head
+        int valid = 0 
+        while(curNode != NULL){
+            if(faultaddress >= curNode->base && 
+                faultaddress <= (curNode->base+curNode->size)){
+                    valid = 1;
+                    break;
+            }
+            curNode = curNode->next;
+        }
+        if(valid == 1){
+            //needs fixing
+            vm_ptable_insert(1)
+        }else{
+            return EFAULT;
+        }
+    }else{
+        tlb_random(paddr, faultaddress|TLBLO_DIRTY |TLBLO_VALID)
+    }
+
+    
 
     panic("vm_fault hasn't been written yet\n");
 
@@ -54,7 +86,35 @@ vm_tlbshootdown(const struct tlbshootdown *ts)
 	panic("vm tried to do tlb shootdown?!\n");
 }
 
-vm_ptable_insert(unsigned int npages){
-    vaddr = alloc_kpages(npages)
+vaddr_t vm_ptable_insert(unsigned int npages){
+    vaddr = alloc_kpages(npages);
+    paddr = KVADDR_TO_PADDR(vaddr);
+    int firstIndex = vaddr>>21;
+    int secondIndex = (vaddr>>21) & 0x1FF;
+    if(as->page[firstIndex] == 0){
+        as->page[firstIndex] = kmalloc(512*sizeof(paddr_t));
+        for(j = 0; j < 512; j++){
+            as->pagetable[firstIndex][j] = 0;
+        }
+    }
+    as->page[firstIndex][secondIndex] = paddr<<12;
 
+    return vaddr;
+
+}
+
+void vm_ptable_update(vaddr_t vaddr){
+    
+}
+
+paddr_t vm_ptable_lookup(vaddr_t vaddr){
+    addrspace *as = proc_getas();
+    int firstIndex = vaddr>>21;
+    int secondIndex = (vaddr>>21) & 0x1FF;
+    if(as->page[firstIndex] == 0){
+        return 0;
+    }else if (as->page[firstIndex][secondIndex] == 0){
+        return 0;
+    }
+    return as->page[firstIndex][secondIndex];
 }
