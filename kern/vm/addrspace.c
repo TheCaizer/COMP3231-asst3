@@ -137,9 +137,9 @@ as_destroy(struct addrspace *as)
 		kfree(curNode)
 		curNode = temp
 	}
-	for(i = 0; i < 2048){
+	for(i = 0; i < PT_FIRST_SIZE){
 		if (as->pagetable[i] != 0){
-			for(j = 0; j < 512; j++){
+			for(j = 0; j < PT_SECOND_SIZE2; j++){
 				kfree(as->pagetable[i][j])
 			}
 			kfree(as->pagetable[i])
@@ -153,20 +153,23 @@ as_destroy(struct addrspace *as)
 void
 as_activate(void)
 {
+    // FROM dumbvm
+	int i, spl;
 	struct addrspace *as;
 
 	as = proc_getas();
 	if (as == NULL) {
-		/*
-		 * Kernel thread without an address space; leave the
-		 * prior address space in place.
-		 */
 		return;
 	}
 
-	/*
-	 * Write this.
-	 */
+	/* Disable interrupts on this CPU while frobbing the TLB. */
+	spl = splhigh();
+
+	for (i=0; i<NUM_TLB; i++) {
+		tlb_write(TLBHI_INVALID(i), TLBLO_INVALID(), i);
+	}
+
+	splx(spl);
 }
 
 void
@@ -196,14 +199,10 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 	/*
 	 * Write this.
 	 */
+    if(as == NULL){
+        return EFAULT;
+    }
 
-	(void)as;
-	(void)vaddr;
-	(void)memsize;
-	(void)readable;
-	(void)writeable;
-	(void)executable;
-	return ENOSYS; /* Unimplemented */
 }
 
 int
