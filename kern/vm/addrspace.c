@@ -220,6 +220,7 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
     if(new == NULL){
         return ENOMEM;
     }
+    // Set base, size, the persmissions
     new->base = vaddr;
     new->size = memsize;
     new->permission[0] = readable;

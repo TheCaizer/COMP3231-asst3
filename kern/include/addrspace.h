@@ -56,7 +56,7 @@ struct vnode;
 struct region{
     vaddr_t base;
     //for permission index 0 = r, 1=w, 2= x; 
-    bool permission[3];
+    int permission[3];
     size_t size;
     struct region *next;
 };
@@ -134,10 +134,10 @@ int               as_define_region(struct addrspace *as,
                                    vaddr_t vaddr, size_t sz,
                                    int readable,
                                    int writeable,
-                                   int executable); // Jackie
+                                   int executable); // Jackie (DONE)
 int               as_prepare_load(struct addrspace *as); // Jackie
-int               as_complete_load(struct addrspace *as); // Izaac
-int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr); // Jackie
+int               as_complete_load(struct addrspace *as); // Jackie
+int               as_define_stack(struct addrspace *as, vaddr_t *initstackptr); // Jackie (DONE)
 
 
 /*
