@@ -58,10 +58,16 @@ int insert_pt(vaddr_t page, paddr_t frame, struct addrspace *as) {
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
-    if(faulttype == VM_FAULT_READONLY){
+    if(faultaddress == 0x0){
         return EFAULT;
     }
 
+    if(faulttype == VM_FAULT_READONLY){
+        return EFAULT;
+    }
+    if(curproc == NULL){
+        return EFAULT;
+    }
 
 	struct addrspace *as = proc_getas();
 	if (as == NULL || as->region_head == NULL || as->pagetable == NULL) {
