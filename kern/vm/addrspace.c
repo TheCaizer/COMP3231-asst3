@@ -68,7 +68,7 @@ as_create(void)
     if(as->pagetable == NULL){
         kfree(as->pagetable);
         kfree(as);
-        return NULL;
+        return ENOMEM;
     }
     // Initialize first level
     for(int i = 0; i < PT_FIRST_SIZE; i++){

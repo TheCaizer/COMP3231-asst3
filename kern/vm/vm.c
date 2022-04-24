@@ -22,10 +22,14 @@ void vm_bootstrap(void)
 int
 vm_fault(int faulttype, vaddr_t faultaddress)
 {
+    if(faultaddress == NULL){
+        return EFAULT;
+    }
 
     if(faulttype == VM_FAULT_READONLY){
         return EFAULT;
     }
+
     if (curproc == NULL) {
 		/*
 		 * No process. This is probably a kernel fault early
@@ -36,7 +40,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	}
 
 	struct addrspace *as = proc_getas();
-	if (as == NULL) {
+	if (as == NULL || as->region_head == NULL || as->pagetable == NULL) {
 		/*
 		 * No address space set up. This is probably also a
 		 * kernel fault early in boot.
@@ -45,7 +49,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	}
     faultaddress &= PAGE_FRAME;
 
-    paddr = lookup(faultaddress)
+    paddr = lookup(faultaddress);
     if(paddr == 0){
         addrspace *as = proc_getas()
         region *curNode = as->region_head
