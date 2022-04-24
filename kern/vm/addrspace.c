@@ -57,10 +57,6 @@ as_create(void)
 	if (as == NULL) {
 		return NULL;
 	}
-
-	/*
-	 * Initialize as needed.
-	*/
     // set head as null and malloc the page table
     as->region_head = NULL;
     as->pagetable = kmalloc(sizeof(paddr_t *) * PT_FIRST_SIZE);
@@ -88,7 +84,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 		return ENOMEM;
 	}
 
-	//copy pagetable
+	//create pagetable
 	newas->pagetable = kmalloc(PT_FIRST_SIZE*sizeof(paddr_t *));
     if(newas->pagetable == NULL){
         as_destroy(newas);
@@ -101,7 +97,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
             continue;
         }
 
-        //if there is a pointer in the old page table assign a new one
+        //if there is a value in the old page table assign a new one
         //for the new one to point to a new 2nd level page table
         newas->pagetable[i] = kmalloc(sizeof(paddr_t *) * PT_SECOND_SIZE);
         for(int j = 0;j < PT_SECOND_SIZE;j++){
@@ -115,6 +111,7 @@ as_copy(struct addrspace *old, struct addrspace **ret)
                     as_destroy(newas);
                     return ENOMEM;
                 }
+                //set frame
                 paddr_t add_frame = KVADDR_TO_PADDR(frame);
                 newas->pagetable[i][j] = add_frame;
                 // copy mem
@@ -197,6 +194,7 @@ as_destroy(struct addrspace *as)
         }
         kfree(as->pagetable);
     }
+    // free address space
 	kfree(as);
 }
 
@@ -254,9 +252,6 @@ int
 as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 		 int readable, int writeable, int executable)
 {
-	/*
-	 * Write this.
-	 */
      // Check not NULL
     if(as == NULL){
         return EFAULT;
@@ -271,18 +266,18 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
         return ENOMEM;
     }
     // Set base, size, the persmissions
-    new->base = vaddr;
-    new->size = memsize;
     new->permission = 0;
     if(readable){
-        new->permission = new->permission | READ;
+        new->permission |= READ;
     }
     if(writeable){
-        new->permission = new->permission | WRITE;
+        new->permission |= WRITE;
     }
     if(executable){
-        new->permission = new->permission | EXECUTE;
+        new->permission |= EXECUTE;
     }
+    new->base = vaddr;
+    new->size = memsize;
     new->next = as->region_head;
     as->region_head = new;
     return 0;
@@ -291,9 +286,6 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t memsize,
 int
 as_prepare_load(struct addrspace *as)
 {
-	/*
-	 * Write this.
-	 */
      // Check for err
     if(as == NULL){
         return EFAULT;
@@ -349,8 +341,11 @@ as_complete_load(struct addrspace *as)
 int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
+    // get size of the stack
     size_t size = NUM_STACK * PAGE_SIZE;
+    // adress of the stack base
     vaddr_t stack = USERSTACK - size;
+    // define the stack and make it so it is read and write
     int ret = as_define_region(as, stack, size, 1, 1, 0);
     if(ret){
         return ret;
