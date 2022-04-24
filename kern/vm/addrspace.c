@@ -94,18 +94,22 @@ as_copy(struct addrspace *old, struct addrspace **ret)
         as_destroy(newas);
         return ENOMEM;
     }
+
     for(int i = 0; i < PT_FIRST_SIZE; i++){
         if(old->pagetable[i] == NULL){
             newas->pagetable[i] = NULL;
             continue;
         }
+
+        //if there is a pointer in the old page table assign a new one
+        //for the new one to point to a new 2nd level page table
         newas->pagetable[i] = kmalloc(sizeof(paddr_t *) * PT_SECOND_SIZE);
         for(int j = 0;j < PT_SECOND_SIZE;j++){
             if(old->pagetable[i][j] == 0){
                 newas->pagetable[i][j] = 0;
             }
             else{
-                // Allocate physical frame
+                // Allocate physical frame 
                 vaddr_t frame = alloc_kpages(1);
                 if(frame == 0){
                     as_destroy(newas);
@@ -129,21 +133,29 @@ as_copy(struct addrspace *old, struct addrspace **ret)
             as_destroy(newas);
             return ENOMEM;
         }
+        //copy old region_head to new region_head
 		newas->region_head->base= old->region_head->base;
 		newas->region_head->permission = old->region_head->permission;
 		newas->region_head->size = old->region_head->size;
+
 		struct region *curOldNode = old->region_head->next;
 		struct region *curNode = newas->region_head;
+
+        //copy data from each old region node
+        //into a new region node, stop when old list ends
 		while(curOldNode!= NULL){
 			curNode->next = kmalloc(sizeof(struct region));
+            //return memory error if no page table
             if(newas->pagetable == NULL){
                 as_destroy(newas);
                 return ENOMEM;
             }
+            //copy data
 			curNode->next->base= curOldNode->base;
 			curNode->next->permission = curOldNode->permission;
 			curNode->next->size = curOldNode->size;
 
+            //incrament nodes to next node
 			curNode = curNode->next;
 			curOldNode = curOldNode->next;
 
@@ -151,7 +163,6 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 
 		curNode->next = NULL;
 	}
-	//(void)old;
 
 	*ret = newas;
 	return 0;
@@ -160,13 +171,18 @@ as_copy(struct addrspace *old, struct addrspace **ret)
 void
 as_destroy(struct addrspace *as)
 {
+    //free all nodes in region linked list
 	struct region *curNode = as->region_head;
 	struct region *temp = NULL;
+
+
 	while(curNode != NULL){
 		temp = curNode->next ;
 		kfree(curNode);
 		curNode = temp;
 	}
+
+    //free all pagetable entries and pagetable itself
     if(as->pagetable != NULL){
         for(int i = 0; i < PT_FIRST_SIZE; i++){
             if (as->pagetable[i] != NULL){
@@ -333,9 +349,6 @@ as_complete_load(struct addrspace *as)
 int
 as_define_stack(struct addrspace *as, vaddr_t *stackptr)
 {
-	/*
-	 * Write this.
-	 */
     size_t size = NUM_STACK * PAGE_SIZE;
     vaddr_t stack = USERSTACK - size;
     int ret = as_define_region(as, stack, size, 1, 1, 0);
